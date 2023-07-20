@@ -32,25 +32,31 @@ class MyHomePage extends StatelessWidget {
     var appState = context.watch<MyAppState>();
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Exchange Converter"),
+      ),
       body: Column(
         children: [
-          const Text("test"),
-          ListView.builder(
-            scrollDirection: Axis.vertical,
-            shrinkWrap: true,
-            itemCount: appState.selectedCurrency.length,
-            prototypeItem: const ListTile(
-              title: Text("text"),
+          Expanded(
+            child: ListView.builder(
+              scrollDirection: Axis.vertical,
+              shrinkWrap: true,
+              itemCount: appState.selectedCurrency.length,
+              prototypeItem: const ListTile(
+                title: Text("text"),
+              ),
+              itemBuilder: (context, index) {
+                return ListTile(title: Text(appState.selectedCurrency[index]));
+              },
             ),
-            itemBuilder: (context, index) {
-              return ListTile(title: Text(appState.selectedCurrency[index]));
-            },
-          ),
-          ElevatedButton(
-            onPressed: () => {appState.addCurrency("test")},
-            child: const Text("+"),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomAppBar(
+        child: ElevatedButton(
+          onPressed: () => {appState.addCurrency("test")},
+          child: const Text("+"),
+        ),
       ),
     );
   }
