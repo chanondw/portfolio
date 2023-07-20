@@ -42,11 +42,9 @@ class MyHomePage extends StatelessWidget {
               scrollDirection: Axis.vertical,
               shrinkWrap: true,
               itemCount: appState.selectedCurrency.length,
-              prototypeItem: const ListTile(
-                title: Text("text"),
-              ),
+              prototypeItem: const CurrencyCard("currency"),
               itemBuilder: (context, index) {
-                return ListTile(title: Text(appState.selectedCurrency[index]));
+                return CurrencyCard(appState.selectedCurrency[index]);
               },
             ),
           ),
