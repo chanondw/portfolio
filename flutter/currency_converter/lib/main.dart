@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         ),
-        home: MyHomePage(),
+        home: const MyHomePage(),
       ),
     );
   }
@@ -35,9 +35,17 @@ class MyHomePage extends StatelessWidget {
       body: Column(
         children: [
           const Text("test"),
-          ListView(children: [
-            for (var c in appState.selectedCurrency) CurrencyCard(c),
-          ]),
+          ListView.builder(
+            scrollDirection: Axis.vertical,
+            shrinkWrap: true,
+            itemCount: appState.selectedCurrency.length,
+            prototypeItem: const ListTile(
+              title: Text("text"),
+            ),
+            itemBuilder: (context, index) {
+              return ListTile(title: Text(appState.selectedCurrency[index]));
+            },
+          ),
           ElevatedButton(
             onPressed: () => {appState.addCurrency("test")},
             child: const Text("+"),
@@ -69,17 +77,13 @@ class CurrencyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Card(
-          elevation: 0,
-          color: Theme.of(context).colorScheme.surfaceVariant,
-          child: SizedBox(
-            height: 100,
-            child: Center(child: Text("Card for $code")),
-          ),
-        ),
-      ],
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceVariant,
+      child: SizedBox(
+        height: 100,
+        child: Center(child: Text("Card for $code")),
+      ),
     );
   }
 }
