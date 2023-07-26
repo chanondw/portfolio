@@ -38,6 +38,7 @@ class MyHomePage extends StatelessWidget {
       ),
       body: Column(
         children: [
+          const BaseCurrencySelector(),
           Expanded(
             child: ListView.builder(
               scrollDirection: Axis.vertical,
@@ -60,6 +61,7 @@ class MyHomePage extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   List<String> selectedCurrency = [];
+  String baseCurrency = "USD";
 
   void addCurrency(String currency) {
     selectedCurrency.add(currency);
@@ -68,6 +70,11 @@ class MyAppState extends ChangeNotifier {
 
   void removeCurrency(String currency) {
     selectedCurrency.remove(currency);
+    notifyListeners();
+  }
+
+  void setBaseCurrency(String newBase) {
+    baseCurrency = newBase;
     notifyListeners();
   }
 }
@@ -119,20 +126,62 @@ class CurrencyDropDown extends StatelessWidget {
           if (!snapshot.hasData) {
             return const CircularProgressIndicator();
           }
-          return DropdownButton<String>(
-              isExpanded: true,
-              items: snapshot.data!.map((item) {
-                return DropdownMenuItem(
-                  value: item.code,
-                  child: Text(item.code),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue == null) {
-                  return;
-                }
-                appState.addCurrency(newValue);
-              });
+          return Padding(
+              padding: const EdgeInsets.only(left: 15, right: 15),
+              child: DropdownButton<String>(
+                  isExpanded: true,
+                  items: snapshot.data!.map((item) {
+                    return DropdownMenuItem(
+                      value: item.code,
+                      child: Text(item.code),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    if (newValue == null) {
+                      return;
+                    }
+                    appState.addCurrency(newValue);
+                  }));
         });
+  }
+}
+
+class BaseCurrencySelector extends StatelessWidget {
+  const BaseCurrencySelector({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    final curList = CurrencyRepository().getList();
+
+    return Card(
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        child: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20),
+            child: FutureBuilder(
+                future: curList,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator();
+                  }
+                  return DropdownButton<String>(
+                    isExpanded: true,
+                    items: snapshot.data!.map((item) {
+                      return DropdownMenuItem(
+                        value: item.code,
+                        child: Text(item.code),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue == null) {
+                        return;
+                      }
+                      appState.setBaseCurrency(newValue);
+                    },
+                    value: appState.baseCurrency,
+                  );
+                })));
   }
 }
