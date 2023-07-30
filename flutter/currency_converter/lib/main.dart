@@ -1,6 +1,9 @@
+import 'package:currency_converter/models/exchange_rate_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../repositories/currency_repository.dart';
+import '../models/currencies.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,6 +34,10 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    final curList = CurrencyRepository().getList();
+    appState.curList = curList;
+    var convList = CurrencyRepository().getConversionList("USD");
+    convList.then((v) => appState.rateList = v);
 
     return Scaffold(
       appBar: AppBar(
@@ -62,6 +69,9 @@ class MyHomePage extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   List<String> selectedCurrency = [];
   String baseCurrency = "USD";
+  double baseAmount = 0;
+  late Future<List<CurrencyModel>> curList;
+  var rateList = ExchangeRateList("USD", {});
 
   void addCurrency(String currency) {
     selectedCurrency.add(currency);
@@ -75,6 +85,11 @@ class MyAppState extends ChangeNotifier {
 
   void setBaseCurrency(String newBase) {
     baseCurrency = newBase;
+    notifyListeners();
+  }
+
+  void setBaseAmount(String amount) {
+    baseAmount = double.parse(amount);
     notifyListeners();
   }
 }
@@ -93,7 +108,9 @@ class CurrencyCard extends StatelessWidget {
       elevation: 0,
       color: Theme.of(context).colorScheme.surfaceVariant,
       child: ListTile(
-        title: Center(child: Text(code)),
+        title: Text(
+            "${appState.rateList.convert(appState.baseCurrency, code, appState.baseAmount)}"),
+        subtitle: Text(code),
         leading: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -118,10 +135,8 @@ class CurrencyDropDown extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
 
-    final curList = CurrencyRepository().getList();
-
     return FutureBuilder(
-        future: curList,
+        future: appState.curList,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const CircularProgressIndicator();
@@ -153,35 +168,54 @@ class BaseCurrencySelector extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
 
-    final curList = CurrencyRepository().getList();
-
-    return Card(
-        elevation: 0,
+    return Container(
         color: Theme.of(context).colorScheme.surfaceVariant,
         child: Padding(
             padding: const EdgeInsets.only(left: 20, right: 20),
-            child: FutureBuilder(
-                future: curList,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const CircularProgressIndicator();
-                  }
-                  return DropdownButton<String>(
-                    isExpanded: true,
-                    items: snapshot.data!.map((item) {
-                      return DropdownMenuItem(
-                        value: item.code,
-                        child: Text(item.code),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue == null) {
-                        return;
-                      }
-                      appState.setBaseCurrency(newValue);
-                    },
-                    value: appState.baseCurrency,
-                  );
-                })));
+            child: Row(children: [
+              Expanded(
+                  flex: 1,
+                  child: Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: FutureBuilder(
+                          future: appState.curList,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const CircularProgressIndicator();
+                            }
+                            return DropdownButton<String>(
+                              isExpanded: true,
+                              items: snapshot.data!.map((item) {
+                                return DropdownMenuItem(
+                                  value: item.code,
+                                  child: Text(item.code),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                if (newValue == null) {
+                                  return;
+                                }
+                                appState.setBaseCurrency(newValue);
+                              },
+                              value: appState.baseCurrency,
+                            );
+                          }))),
+              Expanded(
+                flex: 1,
+                child: Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: TextField(
+                      decoration:
+                          const InputDecoration(labelText: "Enter amount"),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^[0-9]+.?[0-9]{0,2}'))
+                      ],
+                      onChanged: (v) => appState.setBaseAmount(v),
+                    )),
+              ),
+            ])));
   }
 }
