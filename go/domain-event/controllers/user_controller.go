@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"fmt"
+	"domain-event/domains"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -19,7 +19,14 @@ func (u *UserController) Mount(r chi.Router) error {
 }
 
 func (u *UserController) Create(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("creating user")
+	usrDomain := domains.User{}
+	if err := extractJSONBody(r, &usrDomain); err != nil {
+		// Error class should be more refined in real case scenario
+		// simplifying it for since it is not the main focus of this project
+		Error(w, r, http.StatusInternalServerError, err)
+		return
+	}
 
+	usrDomain.Create(r.Context())
 	Render(w, r, "OK")
 }

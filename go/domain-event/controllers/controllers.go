@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	domainevents "domain-event/domain-events"
+	"domain-event/services"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +16,16 @@ type Interface interface {
 
 var allControllers = []Interface{
 	&UserController{},
+}
+
+func init() {
+	emailService := services.NewEmailService()
+
+	allControllers = []Interface{
+		&UserController{},
+	}
+
+	domainevents.Register(domainevents.UserCreateEvent, emailService.HandleUserCreateEvent)
 }
 
 func MountAll(router chi.Router) error {
@@ -37,4 +49,27 @@ func Render(w http.ResponseWriter, r *http.Request, obj interface{}) {
 			fmt.Print(err)
 		}
 	}
+}
+
+func Error(w http.ResponseWriter, r *http.Request, status int, obj interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	if err := json.NewEncoder(w).Encode(obj); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		if err_ := json.NewEncoder(w).Encode("internal server error"); err_ != nil {
+			fmt.Print(err)
+		}
+	}
+}
+
+func extractJSONBody(req *http.Request, out any) error {
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(out)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
